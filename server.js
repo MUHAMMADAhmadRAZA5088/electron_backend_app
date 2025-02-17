@@ -21,7 +21,7 @@ const errorMessages = {
 app.post('/api/proxy', async (req, res) => {
   try {
     const { method, url, headers, body, bodyType, settings } = req.body;
-
+    console.log(req.body);
     if (!url) {
       return res.status(400).json({
         error: errorMessages[400],

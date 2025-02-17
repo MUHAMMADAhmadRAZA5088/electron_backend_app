@@ -2,13 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const FormData = require('form-data');
+const { Headers } = require('node-fetch');  // Add this import
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-
 
 const errorMessages = {
   400: 'Bad Request: Invalid request format or parameters.',
@@ -22,7 +21,6 @@ const errorMessages = {
 app.post('/api/proxy', async (req, res) => {
   try {
     const { method, url, headers, body, bodyType, settings } = req.body;
-    
 
     if (!url) {
       return res.status(400).json({
@@ -32,12 +30,13 @@ app.post('/api/proxy', async (req, res) => {
       });
     }
     
-        const timeout = settings?.timeout || 30000; 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const timeout = settings?.timeout || 30000; 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     
+    // Create headers object using node-fetch Headers
     const requestHeaders = new Headers();
-    if (headers && headers.length > 0) {
+    if (headers && Array.isArray(headers)) {
       headers.forEach(header => {
         if (header.key && header.value) {
           requestHeaders.append(header.key, header.value);
@@ -80,10 +79,12 @@ app.post('/api/proxy', async (req, res) => {
     });
 
     clearTimeout(timeoutId);
+    
+    // Convert headers to plain object
     const responseHeaders = {};
-    response.headers.forEach((value, key) => {
+    for (const [key, value] of response.headers) {
       responseHeaders[key] = value;
-    });
+    }
 
     if (!response.ok) {
       const errorResponse = {

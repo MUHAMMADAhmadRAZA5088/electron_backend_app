@@ -20,8 +20,8 @@ const errorMessages = {
 
 app.post('/api/proxy', async (req, res) => {
   try {
-    const { method, url, headers, body, bodyType, settings } = req.body;
-    console.log("hellow" , req.body)
+    const { method, url, headers = [], body, bodyType, settings } = req.body;
+
     if (!url) {
       return res.status(400).json({
         error: errorMessages[400],
@@ -36,35 +36,39 @@ app.post('/api/proxy', async (req, res) => {
     
     // Create headers object using node-fetch Headers
     const requestHeaders = new Headers();
-    if (headers && Array.isArray(headers)) {
+    if (Array.isArray(headers)) {
       headers.forEach(header => {
-        if (header.key && header.value) {
+        if (header?.key && header?.value) {
           requestHeaders.append(header.key, header.value);
         }
       });
     }
 
     let requestBody = null;
-    if (bodyType === 'raw') {
+    if (bodyType === 'raw' && body?.type === 'raw') {
       requestBody = body.content;
       if (!requestHeaders.has('Content-Type')) {
         requestHeaders.set('Content-Type', 'application/json');
       }
-    } else if (bodyType === 'formData') {
+    } else if (bodyType === 'formData' && body?.type === 'formData') {
       const formData = new FormData();
-      body.formData.forEach(item => {
-        if (item.key && item.value) {
-          formData.append(item.key, item.value);
-        }
-      });
+      if (Array.isArray(body.formData)) {
+        body.formData.forEach(item => {
+          if (item?.key && item?.value) {
+            formData.append(item.key, item.value);
+          }
+        });
+      }
       requestBody = formData;
-    } else if (bodyType === 'urlencoded') {
+    } else if (bodyType === 'urlencoded' && body?.type === 'urlencoded') {
       const params = new URLSearchParams();
-      body.urlencoded.forEach(item => {
-        if (item.key && item.value) {
-          params.append(item.key, item.value);
-        }
-      });
+      if (Array.isArray(body.urlencoded)) {
+        body.urlencoded.forEach(item => {
+          if (item?.key && item?.value) {
+            params.append(item.key, item.value);
+          }
+        });
+      }
       requestBody = params;
       requestHeaders.set('Content-Type', 'application/x-www-form-urlencoded');
     }
